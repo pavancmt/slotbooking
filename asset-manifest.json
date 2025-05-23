@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/slot-booking-system/static/css/main.9767e5c4.css",
+    "main.js": "/slot-booking-system/static/js/main.f8482e7a.js",
+    "static/js/453.b7afd984.chunk.js": "/slot-booking-system/static/js/453.b7afd984.chunk.js",
+    "index.html": "/slot-booking-system/index.html",
+    "main.9767e5c4.css.map": "/slot-booking-system/static/css/main.9767e5c4.css.map",
+    "main.f8482e7a.js.map": "/slot-booking-system/static/js/main.f8482e7a.js.map",
+    "453.b7afd984.chunk.js.map": "/slot-booking-system/static/js/453.b7afd984.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.9767e5c4.css",
+    "static/js/main.f8482e7a.js"
+  ]
+}
