@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/slotbooking/static/css/main.9767e5c4.css",
-    "main.js": "/slotbooking/static/js/main.92ea8de8.js",
-    "static/js/453.b7afd984.chunk.js": "/slotbooking/static/js/453.b7afd984.chunk.js",
-    "index.html": "/slotbooking/index.html",
-    "main.9767e5c4.css.map": "/slotbooking/static/css/main.9767e5c4.css.map",
-    "main.92ea8de8.js.map": "/slotbooking/static/js/main.92ea8de8.js.map",
-    "453.b7afd984.chunk.js.map": "/slotbooking/static/js/453.b7afd984.chunk.js.map"
+    "main.css": "/slot-booking-system/static/css/main.799b6251.css",
+    "main.js": "/slot-booking-system/static/js/main.7fb5350c.js",
+    "static/js/453.b7afd984.chunk.js": "/slot-booking-system/static/js/453.b7afd984.chunk.js",
+    "index.html": "/slot-booking-system/index.html",
+    "main.799b6251.css.map": "/slot-booking-system/static/css/main.799b6251.css.map",
+    "main.7fb5350c.js.map": "/slot-booking-system/static/js/main.7fb5350c.js.map",
+    "453.b7afd984.chunk.js.map": "/slot-booking-system/static/js/453.b7afd984.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.9767e5c4.css",
-    "static/js/main.92ea8de8.js"
+    "static/css/main.799b6251.css",
+    "static/js/main.7fb5350c.js"
   ]
 }
