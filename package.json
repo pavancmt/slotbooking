@@ -2,7 +2,7 @@
   "name": "slot-booking-system",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://pavancnt.github.io/slot-booking-system",
+  "homepage": "https://pavancmt.github.io/slotbooking",
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
