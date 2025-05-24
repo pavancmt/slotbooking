@@ -1,3 +1,4 @@
+// src/SlotBookingSystem.js
 import { useState, useEffect } from 'react';
 import { Calendar, Clock, DollarSign, User, X, CheckCircle, Edit, RefreshCw, LogIn } from 'lucide-react';
 import QRCode from 'qrcode';
@@ -17,13 +18,10 @@ const calculatePrice = (members, duration, bookingCount, promoDiscount) => {
     totalPrice = (basePricePerHour * 12) * 0.85; // 15% discount
   }
 
-  // Apply promo discount
   let finalPrice = totalPrice * (1 - promoDiscount / 100);
-
-  // Apply 2% discount for 5th booking
   let loyaltyDiscount = 0;
   if (bookingCount >= 5) {
-    loyaltyDiscount = 2; // 2% discount
+    loyaltyDiscount = 2;
     finalPrice = finalPrice * (1 - loyaltyDiscount / 100);
   }
 
@@ -36,18 +34,17 @@ const calculatePrice = (members, duration, bookingCount, promoDiscount) => {
   };
 };
 
-// Function to convert 24-hour time to 12-hour format with AM/PM
+// Convert 24-hour time to 12-hour format with AM/PM
 const format12HourTime = (date) => {
   let hours = date.getHours();
   const minutes = date.getMinutes().toString().padStart(2, '0');
   const seconds = date.getSeconds().toString().padStart(2, '0');
   const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12;
-  hours = hours ? hours : 12; // If hours is 0, make it 12
+  hours = hours % 12 || 12;
   return `${hours}:${minutes}:${seconds} ${ampm}`;
 };
 
-// Function to convert slot time (e.g., "14:00") to 12-hour format
+// Convert slot time (e.g., "14:00") to 12-hour format
 const convertSlotTimeTo12Hour = (time) => {
   const [hour, minute] = time.split(':').map(Number);
   const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -55,7 +52,7 @@ const convertSlotTimeTo12Hour = (time) => {
   return `${adjustedHour}:${minute.toString().padStart(2, '0')} ${ampm}`;
 };
 
-// Mock data for slots (no automatic booking)
+// Generate initial slots (7 days, 8 AM to 10 PM)
 const generateInitialSlots = () => {
   const slots = [];
   const today = new Date();
@@ -74,7 +71,7 @@ const generateInitialSlots = () => {
         date: dateString,
         startTime,
         endTime,
-        isBooked: false, // No automatic booking
+        isBooked: false,
         bookingName: null,
         isHoliday: false,
         members: null,
@@ -87,8 +84,28 @@ const generateInitialSlots = () => {
   return slots;
 };
 
+// Load slots from localStorage or generate fresh slots
+const loadSlotsFromStorage = () => {
+  try {
+    const storedSlots = localStorage.getItem('bookingSlots');
+    if (storedSlots) {
+      const parsedSlots = JSON.parse(storedSlots);
+      const initialSlots = generateInitialSlots();
+      // Merge stored slots with initial slots to handle new days or slots
+      return initialSlots.map(initialSlot => {
+        const storedSlot = parsedSlots.find(s => s.id === initialSlot.id);
+        return storedSlot ? { ...initialSlot, ...storedSlot } : initialSlot;
+      });
+    }
+    return generateInitialSlots();
+  } catch (error) {
+    console.error('Error loading slots from localStorage:', error);
+    return generateInitialSlots();
+  }
+};
+
 export default function SlotBookingSystem() {
-  const [slots, setSlots] = useState(generateInitialSlots());
+  const [slots, setSlots] = useState(loadSlotsFromStorage());
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [userName, setUserName] = useState('');
@@ -117,19 +134,53 @@ export default function SlotBookingSystem() {
   const [newPromoCode, setNewPromoCode] = useState('');
   const [newPromoDiscount, setNewPromoDiscount] = useState('');
   const [showPromoModal, setShowPromoModal] = useState(false);
+  const [editingPromo, setEditingPromo] = useState(null);
+  const [keySequence, setKeySequence] = useState('');
+
+  // Save slots to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('bookingSlots', JSON.stringify(slots));
+      console.log('Slots saved to localStorage:', slots); // Debug
+    } catch (error) {
+      console.error('Error saving slots to localStorage:', error);
+    }
+  }, [slots]);
 
   // Update current time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-    
     return () => clearInterval(timer);
   }, []);
 
-  // Handle mobile number input to retrieve user name and booking count
+  // Handle key sequence for "425" to toggle TV mode
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!document.activeElement.tagName.toLowerCase().match(/input|textarea/)) {
+        const newSequence = (keySequence + e.key).slice(-3);
+        console.log('Key pressed:', e.key, 'Sequence:', newSequence); // Debug
+        setKeySequence(newSequence);
+        if (newSequence === '425') {
+          setShowTVDisplay((prev) => {
+            console.log('Toggling TV mode to:', !prev); // Debug
+            return !prev;
+          });
+          setKeySequence('');
+        }
+      } else {
+        console.log('Key ignored: Input focused'); // Debug
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [keySequence]);
+
+  // Handle mobile number input
   const handleMobileNumberChange = (e) => {
-    const number = e.target.value;
+    const number = e.target.value.replace(/\D/g, '');
     setMobileNumber(number);
 
     if (number.length === 10) {
@@ -149,7 +200,7 @@ export default function SlotBookingSystem() {
     }
   };
 
-  // Filter slots based on the selected date
+  // Filter slots
   const filteredSlots = slots.filter(slot => {
     const dateMatch = slot.date === selectedDate;
     if (filter === 'all') return dateMatch;
@@ -160,7 +211,7 @@ export default function SlotBookingSystem() {
 
   const dates = [...new Set(slots.map(slot => slot.date))].sort();
 
-  // Handle slot selection with duration validation
+  // Handle slot selection
   const handleSlotSelect = (slot) => {
     if (slot.isHoliday || (slot.isBooked && !isAdminMode)) return;
 
@@ -198,7 +249,7 @@ export default function SlotBookingSystem() {
     }
   };
 
-  // Handle booking process
+  // Handle booking
   const handleBooking = () => {
     if (!userName.trim()) {
       alert('Please enter your name');
@@ -231,7 +282,6 @@ export default function SlotBookingSystem() {
     setShowQR(false);
     setPaymentComplete(true);
 
-    // Update localStorage with user data
     const userData = JSON.parse(localStorage.getItem(`user_${mobileNumber}`)) || { name: '', bookings: 0 };
     userData.name = userName;
     userData.bookings = (userData.bookings || 0) + 1;
@@ -252,7 +302,7 @@ export default function SlotBookingSystem() {
           mobileNumber,
         };
       }
-      setSlots(updatedSlots);
+      setSlots(updatedSlots); // Triggers localStorage save via useEffect
       setSelectedSlot(null);
       setUserName('');
       setMobileNumber('');
@@ -268,7 +318,7 @@ export default function SlotBookingSystem() {
     }, 2000);
   };
 
-  // Handle marking a slot as holiday
+  // Mark slot as holiday
   const handleMarkHoliday = (slot) => {
     setSlots(slots.map(s => 
       s.id === slot.id 
@@ -296,19 +346,47 @@ export default function SlotBookingSystem() {
     setSlots(updatedSlots);
   };
 
-  // Add new promo code
+  // Add or update promo code
   const addPromoCode = () => {
     if (!newPromoCode || !newPromoDiscount || isNaN(newPromoDiscount) || newPromoDiscount <= 0) {
       alert('Please enter a valid promo code and discount percentage.');
       return;
     }
-    setPromoCodes([...promoCodes, { code: newPromoCode, discount: parseInt(newPromoDiscount) }]);
+
+    if (!editingPromo && promoCodes.some(promo => promo.code === newPromoCode)) {
+      alert('Promo code already exists.');
+      return;
+    }
+
+    if (editingPromo) {
+      setPromoCodes(promoCodes.map((promo) => 
+        promo.code === editingPromo.code ? { code: newPromoCode, discount: parseInt(newPromoDiscount) } : promo
+      ));
+      setEditingPromo(null);
+      alert('Promo code updated successfully!');
+    } else {
+      setPromoCodes([...promoCodes, { code: newPromoCode, discount: parseInt(newPromoDiscount) }]);
+      alert('Promo code added successfully!');
+    }
+
     setNewPromoCode('');
     setNewPromoDiscount('');
-    alert('Promo code added successfully!');
   };
 
-  // Handle admin login
+  // Edit promo code
+  const handleEditPromo = (promo) => {
+    setEditingPromo(promo);
+    setNewPromoCode(promo.code);
+    setNewPromoDiscount(promo.discount);
+  };
+
+  // Delete promo code
+  const handleDeletePromo = (code) => {
+    setPromoCodes(promoCodes.filter(promo => promo.code !== code));
+    alert('Promo code deleted successfully!');
+  };
+
+  // Admin login
   const handleAdminLogin = () => {
     if (adminUsername === 'admin' && adminPassword === 'Pavan040') {
       setIsAdminMode(true);
@@ -320,9 +398,13 @@ export default function SlotBookingSystem() {
     }
   };
 
-  // Toggle TV display mode
+  // Toggle TV display
   const toggleTVDisplay = () => {
-    setShowTVDisplay(!showTVDisplay);
+    console.log('Return button clicked, toggling TV mode'); // Debug
+    setShowTVDisplay((prev) => {
+      console.log('Setting showTVDisplay to:', !prev); // Debug
+      return !prev;
+    });
   };
 
   // Get current active slot
@@ -341,7 +423,7 @@ export default function SlotBookingSystem() {
     });
   };
 
-  // Get next few upcoming slots
+  // Get upcoming slots
   const getUpcomingSlots = (count = 4) => {
     const now = new Date();
     const currentHour = now.getHours();
@@ -386,7 +468,7 @@ export default function SlotBookingSystem() {
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   };
 
-  // Format date for display
+  // Format date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -416,7 +498,11 @@ export default function SlotBookingSystem() {
     const upcomingSlots = getUpcomingSlots(4);
     
     return (
-      <div className="flex flex-col h-screen bg-gray-900 text-white p-8 animate-fadeIn">
+      <div key="tv-mode" className="flex flex-col h-screen bg-gray-900 text-white p-8 animate-fadeIn relative">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-10"
+          style={{ backgroundImage: `url('https://github.com/pavancmt/slotbooking/blob/main/WhatsApp%20Image%202025-05-24%20at%204.12.39%20PM.jpeg?raw=true')` }}
+        ></div>
         <header className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-yellow-400 mb-6 animate-slideIn">Buddy Box</h1>
           <div className="text-3xl font-mono bg-gray-800 inline-block px-6 py-3 rounded-lg">{format12HourTime(currentTime)}</div>
@@ -469,7 +555,13 @@ export default function SlotBookingSystem() {
         </div>
         
         <footer className="mt-6 text-center">
-          <button onClick={toggleTVDisplay} className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded">Return to Booking System</button>
+          <button
+            onClick={toggleTVDisplay}
+            className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded transition-colors"
+            aria-label="Return to booking system"
+          >
+            Return to Booking System
+          </button>
         </footer>
       </div>
     );
@@ -477,13 +569,14 @@ export default function SlotBookingSystem() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-900 animate-fadeIn">
-      {/* Centered Title with Glowing Animation */}
-      <div className="text-center mt-4 mb-2">
-        <h1 className="text-4xl font-extrabold text-white animate-glow">Buddy Box</h1>
-        <p className="text-sm text-gray-300">The cricket turf</p>
+      <div className="text-center mt-4 mb-2 flex items-center justify-center">
+        <img src="https://github.com/pavancmt/slotbooking/blob/main/png-transparent-sport-game-batsman-cricket-player-bat-ball-pad-gloves-helmet-colored-outline-icon.png?raw=true" alt="Buddy Box Logo" className="w-12 h-12 mr-2" />
+        <div>
+          <h1 className="text-4xl font-extrabold text-white animate-glow">Buddy Box</h1>
+          <p className="text-sm text-gray-300">The cricket turf</p>
+        </div>
       </div>
 
-      {/* Admin Login Modal */}
       {showAdminLogin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10 animate-fadeIn">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full animate-slideIn">
@@ -514,13 +607,12 @@ export default function SlotBookingSystem() {
         </div>
       )}
 
-      {/* Admin Promo Code Management */}
       {isAdminMode && showPromoModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10 animate-fadeIn">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full animate-slideIn">
             <h2 className="text-xl font-bold mb-4">Manage Promo Codes</h2>
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">New Promo Code</label>
+              <label className="block text-sm font-medium mb-1">{editingPromo ? 'Edit Promo Code' : 'New Promo Code'}</label>
               <input
                 type="text"
                 value={newPromoCode}
@@ -537,17 +629,40 @@ export default function SlotBookingSystem() {
                 onChange={(e) => setNewPromoDiscount(e.target.value)}
                 className="w-full px-3 py-2 border rounded"
                 placeholder="e.g., 25"
+                min="0"
+                max="100"
               />
             </div>
-            <div className="flex space-x-4 mb-4">
-              <button onClick={addPromoCode} className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Add Promo Code</button>
+            <div className="flex space-x-4 mb-6">
+              <button onClick={addPromoCode} className="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+                {editingPromo ? 'Update Promo Code' : 'Add Promo Code'}
+              </button>
               <button onClick={() => setShowPromoModal(false)} className="flex-1 bg-gray-300 py-2 rounded hover:bg-gray-400">Close</button>
             </div>
+            <h3 className="text-lg font-semibold mb-2">Available Promo Codes</h3>
+            {promoCodes.length > 0 ? (
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {promoCodes.map(promo => (
+                  <div key={promo.code} className="flex justify-between items-center bg-gray-100 p-2 rounded">
+                    <span>{promo.code} - {promo.discount}%</span>
+                    <div className="flex space-x-2">
+                      <button onClick={() => handleEditPromo(promo)} className="text-blue-600 hover:text-blue-800">
+                        <Edit size={16} />
+                      </button>
+                      <button onClick={() => handleDeletePromo(promo.code)} className="text-red-600 hover:text-red-800">
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No promo codes available.</p>
+            )}
           </div>
         </div>
       )}
 
-      {/* Header */}
       <header className="bg-blue-600 text-white p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
@@ -569,9 +684,7 @@ export default function SlotBookingSystem() {
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Booking Interface */}
         <div className="w-2/3 p-4 overflow-y-auto">
           <div className="mb-4">
             <h2 className="text-xl font-semibold flex items-center text-white"><Calendar className="mr-2" size={20} />Select Date</h2>
@@ -618,7 +731,6 @@ export default function SlotBookingSystem() {
           </div>
         </div>
 
-        {/* Booking Form and Display Board */}
         <div className="w-1/3 bg-gray-100 p-4 flex flex-col overflow-y-auto">
           {selectedSlot ? (
             <div className="bg-white p-4 rounded-lg shadow mb-4">
@@ -631,6 +743,7 @@ export default function SlotBookingSystem() {
                   <div className="mb-4">
                     <label className="block text-sm font-medium mb-1">Mobile Number</label>
                     <input 
+                      id="mobileNumberInput"
                       type="text" 
                       value={mobileNumber} 
                       onChange={handleMobileNumberChange} 
@@ -717,7 +830,6 @@ export default function SlotBookingSystem() {
             </div>
           )}
 
-          {/* Display Board */}
           <div className="bg-white p-4 rounded-lg shadow flex-1 overflow-y-auto">
             <h3 className="text-lg font-semibold mb-4">Current Bookings</h3>
             <div className="space-y-2">
