@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { Calendar, Clock, DollarSign, User, X, CheckCircle, Edit, RefreshCw, LogIn } from 'lucide-react';
 import QRCode from 'qrcode';
 
@@ -620,7 +620,7 @@ export default function SlotBookingSystem() {
   };
 
   // Price breakup component
-  const PriceBreakup = ({ members, duration, bookingCount, promoDiscount }) => {
+  const PriceBreakup = memo(({ members, duration, bookingCount, promoDiscount }) => {
     const priceInfo = calculatePrice(members, duration, bookingCount, promoDiscount);
 
     return (
@@ -635,7 +635,7 @@ export default function SlotBookingSystem() {
         <p className="font-bold">Total: \u20B9{priceInfo.finalPrice}</p>
       </div>
     );
-  };
+  });
 
   // TV Display Mode
   if (showTVDisplay) {
@@ -678,7 +678,7 @@ export default function SlotBookingSystem() {
             {upcomingSlots.length > 0 ? (
               <div className="space-y-4 sm:space-y-6">
                 {upcomingSlots.map((slot, index) => (
-                  <div key={slot.id} className={`bg-gray-800 p-3 sm:p-4 rounded-lg animate-slideIn animation-delay-${index * 100}`}>
+                  <div key={slot.id} className="bg-gray-800 p-3 sm:p-4 rounded-lg animate-slideIn" style={{ animationDelay: `${index * 100}ms` }}>
                     <div className="flex items-center">
                       <div className="w-6 sm:w-8 h-6 sm:h-8 rounded-full bg-blue-500 flex items-center justify-center font-bold mr-2 sm:mr-3">{index + 1}</div>
                       <div>
@@ -1011,7 +1011,7 @@ export default function SlotBookingSystem() {
                     ) : slot.isHoliday ? (
                       <span className="text-red-500">{slot.holidayTitle || 'Holiday'}</span>
                     ) : slot.isBooked ? (
-                      <span className="text-gray-600">Booked by {slot.bookingName} ({slot.members} members, {slot.duration} hr)</span>
+                      <span className="text-gray-600">Booked by {slot.bookingName} ({slot.members} members, ${slot.duration} hr)</span>
                     ) : (
                       <span className="text-green-600">Available</span>
                     )}
