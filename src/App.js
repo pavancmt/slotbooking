@@ -626,13 +626,13 @@ export default function SlotBookingSystem() {
     return (
       <div className="mb-4 text-sm sm:text-base">
         <h4 className="font-semibold mb-2">Price Breakup</h4>
-        <p>Base Price (1 hr, {members} members): ₹{priceInfo.basePricePerHour}</p>
+        <p>Base Price (1 hr, {members} members): \u20B9{priceInfo.basePricePerHour}</p>
         <p>Duration: {duration} hour(s)</p>
-        <p>Subtotal: ₹{duration === 1 ? priceInfo.basePricePerHour : priceInfo.basePricePerHour * duration}</p>
+        <p>Subtotal: \u20B9{duration === 1 ? priceInfo.basePricePerHour : priceInfo.basePricePerHour * duration}</p>
         {priceInfo.discount !== '0%' && <p>Duration Discount: {priceInfo.discount}</p>}
         {promoDiscount > 0 && <p>Promo Discount: {promoDiscount}%</p>}
         {priceInfo.loyaltyDiscount > 0 && <p>Loyalty Discount (5th Booking): {priceInfo.loyaltyDiscount}%</p>}
-        <p className="font-bold">Total: ₹{priceInfo.finalPrice}</p>
+        <p className="font-bold">Total: \u20B9{priceInfo.finalPrice}</p>
       </div>
     );
   };
@@ -895,7 +895,7 @@ export default function SlotBookingSystem() {
                         <td className="p-2">{convertSlotTimeTo12Hour(booking.startTime)}</td>
                         <td className="p-2">{booking.duration} hr</td>
                         <td className="p-2">{booking.members}</td>
-                        <td className="p-2">₹{booking.price}</td>
+                        <td className="p-2">\u20B9{booking.price}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1040,7 +1040,7 @@ export default function SlotBookingSystem() {
                       type="text"
                       value={mobileNumber}
                       onChange={handleMobileNumberChange}
-                      className="w-full px-2 sm:px-3 py-1 sm:py2 border rounded text-sm sm:text-base"
+                      className="w-full px-2 sm:px-3 py-1 sm:py-2 border rounded text-sm sm:text-base"
                       placeholder="Enter 10-digit mobile number"
                       maxLength="10"
                       pattern="\d*"
@@ -1078,7 +1078,7 @@ export default function SlotBookingSystem() {
                   <div className="mb-4">
                     <label className="block text-xs sm:text-sm font-medium mb-1">Promo Code</label>
                     <div className="flex">
-                      <input type="text" value={promoCode Aussid onChange={(e) => setPromoCode(e.target.value)} className="flex-1 px-2 sm:px-4 py-1 sm:py-2 border rounded-l text-sm sm:text-base" placeholder="Enter promo code" />
+                      <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value)} className="flex-1 px-2 sm:px-4 py-1 sm:py-2 border rounded-l text-sm sm:text-base" placeholder="Enter promo code" />
                       <button onClick={applyPromoCode} className="bg-blue-600 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-r hover:bg-blue-700 text-sm sm:text-base min-h-[44px]">Apply</button>
                     </div>
                   </div>
@@ -1132,10 +1132,10 @@ export default function SlotBookingSystem() {
                 .sort((a, b) => a.startTime.localeCompare(b.startTime))
                 .map(slot => (
                   <div key={slot.id} className="bg-blue-600 p-2 sm:p-3 rounded flex items-center text-sm sm:text-base">
-                    <User size={14} className="mr-2 text-blue-400"> />
+                    <User size={14} className="mr-2 text-blue-400" />
                     <div className="flex-1">
                       <p className="font-medium">{slot.bookingName}</p>
-                      <p className="text-xs sm:text-sm text-blue-600">{`${convertSlotTime(slot.startTime)} - ${convertSlotTimeTo12Hour(`${(parseInt(slot.startTime.split(':')[0]) + slot.duration) % 24}:00`)} (${slot.members} members, ${slot.duration} hr)`}</p>
+                      <p className="text-xs sm:text-sm text-blue-600">{`${convertSlotTimeTo12Hour(slot.startTime)} - ${convertSlotTimeTo12Hour(`${(parseInt(slot.startTime.split(':')[0]) + slot.duration) % 24}:00`)} (${slot.members} members, ${slot.duration} hr)`}</p>
                     </div>
                   </div>
                 ))}
